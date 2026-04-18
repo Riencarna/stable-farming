@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stable Farming Dashboard</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --surface2: #232733;
+            --border: #2d3140;
+            --text: #e4e6ed;
+            --text-dim: #8b8fa3;
+            --accent: #6c5ce7;
+            --green: #00d2a0;
+            --yellow: #ffc048;
+            --red: #ff6b6b;
+            --blue: #4facfe;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* 헤더 */
+        .header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 20px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--green), var(--blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .last-scan {
+            color: var(--text-dim);
+            font-size: 13px;
+        }
+        .btn-scan {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: opacity .2s;
+        }
+        .btn-scan:hover { opacity: 0.85; }
+        .btn-scan:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* 컨테이너 */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* 통계 카드 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .stat-card .label {
+            color: var(--text-dim);
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .stat-card .sub {
+            color: var(--text-dim);
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        .value-green { color: var(--green); }
+        .value-yellow { color: var(--yellow); }
+        .value-blue { color: var(--blue); }
+
+        /* 섹션 */
+        .section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        .section-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .section-header h2 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .section-header .badge {
+            background: var(--accent);
+            color: white;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* 거래소 카드 그리드 */
+        .exchange-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            padding: 20px;
+        }
+        .exchange-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            transition: border-color .2s;
+        }
+        .exchange-card:hover { border-color: var(--accent); }
+        .exchange-name {
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+        .exchange-stat {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+        .exchange-stat .label { color: var(--text-dim); }
+
+        /* 거래소 색상 */
+        .ex-binance .exchange-name { color: #f0b90b; }
+        .ex-bybit .exchange-name { color: #f7a600; }
+        .ex-okx .exchange-name { color: #e0e0e0; }
+        .ex-gateio .exchange-name { color: #2196f3; }
+        .ex-kucoin .exchange-name { color: #23af5a; }
+        .ex-htx .exchange-name { color: #1c71e8; }
+
+        /* 테이블 */
+        .table-wrap {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            background: var(--surface2);
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        td {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border);
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        tr:hover td { background: rgba(108, 92, 231, 0.05); }
+
+        .apr-cell {
+            font-weight: 700;
+            font-size: 15px;
+        }
+        .apr-high { color: var(--green); }
+        .apr-mid { color: var(--yellow); }
+        .apr-low { color: var(--text); }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .tag-fixed { background: rgba(0, 210, 160, 0.15); color: var(--green); }
+        .tag-variable { background: rgba(255, 192, 72, 0.15); color: var(--yellow); }
+        .tag-limited { background: rgba(255, 107, 107, 0.15); color: var(--red); }
+        .tag-flexible { background: rgba(79, 172, 254, 0.15); color: var(--blue); }
+        .tag-locked { background: rgba(108, 92, 231, 0.15); color: var(--accent); }
+
+        .exchange-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .badge-binance { background: rgba(240, 185, 11, 0.15); color: #f0b90b; }
+        .badge-bybit { background: rgba(247, 166, 0, 0.15); color: #f7a600; }
+        .badge-okx { background: rgba(200, 200, 200, 0.15); color: #c8c8c8; }
+        .badge-gateio { background: rgba(33, 150, 243, 0.15); color: #2196f3; }
+        .badge-kucoin { background: rgba(35, 175, 90, 0.15); color: #23af5a; }
+        .badge-htx { background: rgba(28, 113, 232, 0.15); color: #1c71e8; }
+
+        /* 코인별 요약 */
+        .coin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            padding: 20px;
+        }
+        .coin-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+            text-align: center;
+        }
+        .coin-name {
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: var(--green);
+        }
+        .coin-detail {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+        }
+
+        /* 탭 */
+        .tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-dim);
+            border-bottom: 2px solid transparent;
+            transition: all .2s;
+        }
+        .tab:hover { color: var(--text); }
+        .tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* 알림 이력 */
+        .alert-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            border-top: 1px solid var(--border);
+            font-size: 13px;
+        }
+        .alert-item:first-child { border-top: none; }
+        .alert-info { display: flex; gap: 12px; align-items: center; }
+
+        /* 빈 상태 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-dim);
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .header { padding: 16px; flex-direction: column; gap: 12px; }
+            .container { padding: 16px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            th, td { padding: 8px 12px; font-size: 12px; }
+        }
+
+        /* 로딩 */
+        .spinner {
+            display: inline-block;
+            width: 16px; height: 16px;
+            border: 2px solid var(--text-dim);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<div class="header">
+    <h1>Stable Farming</h1>
+    <div class="header-right">
+        <span class="last-scan">
+            {% if last_scan %}
+                마지막 스캔: {{ last_scan.strftime('%Y-%m-%d %H:%M:%S UTC') }}
+            {% else %}
+                아직 스캔하지 않음
+            {% endif %}
+        </span>
+        <form action="/scan" method="post" style="display:inline;">
+            <button type="submit" class="btn-scan" id="scanBtn" {% if scanning %}disabled{% endif %}>
+                {% if scanning %}<span class="spinner"></span>스캔 중...{% else %}스캔 실행{% endif %}
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- 통계 카드 -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="label">전체 상품</div>
+            <div class="value value-blue">{{ total_count }}</div>
+            <div class="sub">스테이블코인 Earn 상품</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">APR {{ min_apr }}% 이상</div>
+            <div class="value value-green">{{ qualified_count }}</div>
+            <div class="sub">알림 대상 상품</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">최고 APR</div>
+            <div class="value value-yellow">
+                {% if products %}{{ "%.1f"|format(products[0].apr) }}%{% else %}-{% endif %}
+            </div>
+            <div class="sub">
+                {% if products %}{{ products[0].exchange|upper }} / {{ products[0].coin }}{% endif %}
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="label">활성 거래소</div>
+            <div class="value value-blue">
+                {{ exchange_stats.values()|selectattr('total', 'gt', 0)|list|length }}
+            </div>
+            <div class="sub">/ 6개 거래소</div>
+        </div>
+    </div>
+
+    <!-- 거래소별 현황 -->
+    <div class="section">
+        <div class="section-header">
+            <h2>거래소별 현황</h2>
+        </div>
+        <div class="exchange-grid">
+            {% for name, stat in exchange_stats.items() %}
+            <div class="exchange-card ex-{{ name }}">
+                <div class="exchange-name">{{ name }}</div>
+                <div class="exchange-stat">
+                    <span class="label">전체 상품</span>
+                    <span>{{ stat.total }}개</span>
+                </div>
+                <div class="exchange-stat">
+                    <span class="label">APR {{ min_apr }}%+</span>
+                    <span style="color: var(--green);">{{ stat.qualified }}개</span>
+                </div>
+                <div class="exchange-stat">
+                    <span class="label">최고 APR</span>
+                    <span style="color: var(--yellow);">{{ "%.1f"|format(stat.best_apr) }}%</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 코인별 요약 -->
+    {% if coin_stats %}
+    <div class="section">
+        <div class="section-header">
+            <h2>코인별 요약</h2>
+            <span class="badge">{{ coin_stats|length }}개 코인</span>
+        </div>
+        <div class="coin-grid">
+            {% for coin, stat in coin_stats|dictsort(by='value', attribute='best_apr', reverse=true) %}
+            <div class="coin-card">
+                <div class="coin-name">{{ coin }}</div>
+                <div class="coin-detail">최고 APR: {{ "%.1f"|format(stat.best_apr) }}%</div>
+                <div class="coin-detail">{{ stat.count }}개 상품 / {{ stat.exchanges|length }}개 거래소</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 상품 테이블 -->
+    <div class="section">
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('qualified')">APR {{ min_apr }}%+ 상품</div>
+            <div class="tab" onclick="switchTab('all')">전체 상품</div>
+            <div class="tab" onclick="switchTab('history')">알림 이력</div>
+        </div>
+
+        <!-- APR 기준 이상 -->
+        <div class="tab-content active" id="tab-qualified">
+            {% if products %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>거래소</th>
+                            <th>코인</th>
+                            <th>상품명</th>
+                            <th>APR</th>
+                            <th>금리</th>
+                            <th>유형</th>
+                            <th>기간</th>
+                            <th>최소 예치</th>
+                            <th>한도</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in products %}
+                        <tr>
+                            <td><span class="exchange-badge badge-{{ p.exchange }}">{{ p.exchange }}</span></td>
+                            <td><strong>{{ p.coin }}</strong></td>
+                            <td>{{ p.product_name }}</td>
+                            <td class="apr-cell {% if p.apr >= 15 %}apr-high{% elif p.apr >= 10 %}apr-mid{% else %}apr-low{% endif %}">
+                                {{ "%.1f"|format(p.apr) }}%
+                            </td>
+                            <td>
+                                <span class="tag {% if p.apr_type.value == 'fixed' %}tag-fixed{% else %}tag-variable{% endif %}">
+                                    {{ p.apr_type_label }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="tag {% if p.product_type.value == 'flexible' %}tag-flexible{% else %}tag-locked{% endif %}">
+                                    {{ p.product_type_label }}
+                                </span>
+                            </td>
+                            <td>{{ p.duration_label }}</td>
+                            <td>{% if p.min_amount > 0 %}{{ "%.0f"|format(p.min_amount) }}{% else %}-{% endif %}</td>
+                            <td>
+                                {% if p.is_limited %}
+                                    <span class="tag tag-limited">한정</span>
+                                    {% if p.remaining_quota > 0 %}
+                                        {{ "%.0f"|format(p.remaining_quota) }}
+                                    {% endif %}
+                                {% else %}-{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="icon">&#x1F50D;</div>
+                <p>아직 조회된 상품이 없습니다.<br>"스캔 실행" 버튼을 눌러 조회하세요.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 전체 상품 -->
+        <div class="tab-content" id="tab-all">
+            {% if all_products %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>거래소</th>
+                            <th>코인</th>
+                            <th>상품명</th>
+                            <th>APR</th>
+                            <th>금리</th>
+                            <th>유형</th>
+                            <th>기간</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in all_products %}
+                        <tr>
+                            <td><span class="exchange-badge badge-{{ p.exchange }}">{{ p.exchange }}</span></td>
+                            <td><strong>{{ p.coin }}</strong></td>
+                            <td>{{ p.product_name }}</td>
+                            <td class="apr-cell {% if p.apr >= 15 %}apr-high{% elif p.apr >= 10 %}apr-mid{% elif p.apr >= min_apr %}apr-low{% endif %}"
+                                style="{% if p.apr < min_apr %}color: var(--text-dim);{% endif %}">
+                                {{ "%.1f"|format(p.apr) }}%
+                            </td>
+                            <td>
+                                <span class="tag {% if p.apr_type.value == 'fixed' %}tag-fixed{% else %}tag-variable{% endif %}">
+                                    {{ p.apr_type_label }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="tag {% if p.product_type.value == 'flexible' %}tag-flexible{% else %}tag-locked{% endif %}">
+                                    {{ p.product_type_label }}
+                                </span>
+                            </td>
+                            <td>{{ p.duration_label }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="icon">&#x1F4E6;</div>
+                <p>데이터 없음</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 알림 이력 -->
+        <div class="tab-content" id="tab-history">
+            {% if alert_history %}
+                {% for item in alert_history %}
+                <div class="alert-item">
+                    <div class="alert-info">
+                        <span class="exchange-badge badge-{{ item.exchange }}">{{ item.exchange }}</span>
+                        <strong>{{ item.coin }}</strong>
+                        <span>{{ item.product_name }}</span>
+                    </div>
+                    <div>
+                        <span style="color: var(--green); font-weight: 700;">{{ "%.1f"|format(item.apr) }}%</span>
+                        <span style="color: var(--text-dim); margin-left: 12px; font-size: 12px;">
+                            {{ item.last_seen[:16] if item.last_seen else '' }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+            <div class="empty-state">
+                <div class="icon">&#x1F514;</div>
+                <p>알림 이력이 없습니다.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<script>
+function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+    document.getElementById('tab-' + name).classList.add('active');
+
+    const tabs = document.querySelectorAll('.tab');
+    const tabMap = { qualified: 0, all: 1, history: 2 };
+    tabs[tabMap[name]].classList.add('active');
+}
+
+// 스캔 버튼 로딩 상태
+document.querySelector('form')?.addEventListener('submit', function() {
+    const btn = document.getElementById('scanBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>스캔 중...';
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,59 @@
+name: Stable Farming Monitor
+
+on:
+  # 10분마다 자동 실행
+  schedule:
+    - cron: '*/10 * * * *'
+
+  # 수동 실행 가능
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # 이전 스캔 상태 복원
+      - name: Restore cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/seen_products.json
+            data/seen_announcements.json
+          key: seen-data-${{ github.run_number }}
+          restore-keys: |
+            seen-data-
+
+      # 스캔 실행
+      - name: Run scan
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          MIN_APR: ${{ secrets.MIN_APR || '8.0' }}
+          BINANCE_API_KEY: ${{ secrets.BINANCE_API_KEY }}
+          BINANCE_API_SECRET: ${{ secrets.BINANCE_API_SECRET }}
+          BYBIT_API_KEY: ${{ secrets.BYBIT_API_KEY }}
+          BYBIT_API_SECRET: ${{ secrets.BYBIT_API_SECRET }}
+          OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
+          OKX_API_SECRET: ${{ secrets.OKX_API_SECRET }}
+          OKX_PASSPHRASE: ${{ secrets.OKX_PASSPHRASE }}
+          GATEIO_API_KEY: ${{ secrets.GATEIO_API_KEY }}
+          GATEIO_API_SECRET: ${{ secrets.GATEIO_API_SECRET }}
+          KUCOIN_API_KEY: ${{ secrets.KUCOIN_API_KEY }}
+          KUCOIN_API_SECRET: ${{ secrets.KUCOIN_API_SECRET }}
+          KUCOIN_PASSPHRASE: ${{ secrets.KUCOIN_PASSPHRASE }}
+          HTX_API_KEY: ${{ secrets.HTX_API_KEY }}
+          HTX_API_SECRET: ${{ secrets.HTX_API_SECRET }}
+        run: python run.py --mode once
