@@ -1,65 +1,45 @@
 from __future__ import annotations
 
-import hashlib
-import hmac
 import logging
-import time
 
 from src.models import AprType, EarnProduct, ProductType
 from src.exchanges.base import BaseExchange
 
 logger = logging.getLogger(__name__)
 
-# Gate.io Earn API (v4)
-# 공개 API는 현재 금리를 제공하지 않음 (min/max 범위만)
-# 정확한 금리 조회를 위해 API 키 필요
+# Gate.io Earn API (v4) - 공개 엔드포인트 (API 키 불필요!)
+# GET /api/v4/earn/uni/rate → 현재 예상 연이율
+# GET /api/v4/earn/structured/products → 구조화 상품 APR 범위
 
 
 class GateioExchange(BaseExchange):
     name = "gateio"
     base_url = "https://api.gateio.ws"
 
-    def _sign_headers(self, method: str, path: str, query: str = "", body: str = "") -> dict[str, str]:
-        ts = str(int(time.time()))
-        body_hash = hashlib.sha512(body.encode()).hexdigest()
-        sign_str = f"{method}\n{path}\n{query}\n{body_hash}\n{ts}"
-        signature = hmac.new(
-            self.api_secret.encode(), sign_str.encode(), hashlib.sha512
-        ).hexdigest()
-        return {
-            "KEY": self.api_key,
-            "SIGN": signature,
-            "Timestamp": ts,
-            "Content-Type": "application/json",
-        }
-
     async def fetch_products(self) -> list[EarnProduct]:
-        if not self.has_credentials:
-            logger.info("[gateio] API 키 필요 - 건너뜀 (공개 API로 정확한 금리 조회 불가)")
-            return []
-
         products: list[EarnProduct] = []
-        products.extend(await self._fetch_uni_products())
+        products.extend(await self._fetch_uni_rates())
         products.extend(await self._fetch_structured())
         return products
 
-    async def _fetch_uni_products(self) -> list[EarnProduct]:
+    async def _fetch_uni_rates(self) -> list[EarnProduct]:
+        """HODL & Earn 현재 이율 (공개 API)"""
         products: list[EarnProduct] = []
         try:
-            path = "/api/v4/earn/uni/currencies"
-            headers = self._sign_headers("GET", path)
             client = await self._get_client()
-            resp = await client.get(f"{self.base_url}{path}", headers=headers)
+            resp = await client.get(f"{self.base_url}/api/v4/earn/uni/rate")
             resp.raise_for_status()
             data = resp.json()
 
-            items = data if isinstance(data, list) else data.get("list", [])
+            items = data if isinstance(data, list) else []
             for item in items:
                 currency = item.get("currency", "")
                 if not self._is_stablecoin(currency):
                     continue
 
-                apr = self._parse_apr(item)
+                # est_rate는 소수 형태 (0.0084 = 0.84%)
+                est_rate = float(item.get("est_rate", 0) or 0)
+                apr = est_rate * 100
 
                 product = EarnProduct(
                     exchange=self.name,
@@ -70,55 +50,55 @@ class GateioExchange(BaseExchange):
                     apr=round(apr, 2),
                     apr_type=AprType.VARIABLE,
                     duration_days=0,
-                    min_amount=float(item.get("min_lend_amount", 0) or 0),
-                    max_amount=float(item.get("max_lend_amount", 0) or 0),
                     url="https://www.gate.io/hodl",
                     raw_data=item,
                 )
                 products.append(product)
         except Exception as e:
-            logger.error(f"[gateio] Uni 조회 실패: {e}")
+            logger.error(f"[gateio] Uni Rate 조회 실패: {e}")
         return products
 
     async def _fetch_structured(self) -> list[EarnProduct]:
+        """구조화 상품 (SharkFin 등) - 공개 API"""
         products: list[EarnProduct] = []
         try:
-            path = "/api/v4/earn/structured/products"
-            headers = self._sign_headers("GET", path)
             client = await self._get_client()
-            resp = await client.get(f"{self.base_url}{path}", headers=headers)
+            resp = await client.get(f"{self.base_url}/api/v4/earn/structured/products")
 
             if resp.status_code in (401, 403, 404):
                 return []
 
             resp.raise_for_status()
             data = resp.json()
-            items = data if isinstance(data, list) else data.get("list", [])
+            items = data if isinstance(data, list) else []
 
             for item in items:
-                currency = item.get("currency", item.get("investCcy", ""))
+                currency = item.get("investment_coin", item.get("currency", ""))
                 if not self._is_stablecoin(currency):
                     continue
 
-                apr = self._parse_apr(item)
-                duration = int(item.get("lock_period", item.get("duration", 0)) or 0)
-                total = float(item.get("total_amount", 0) or 0)
-                remain = float(item.get("remaining_amount", 0) or 0)
+                # 구조화 상품은 min/max APR 범위
+                max_apr = float(item.get("max_annual_rate", 0) or 0)
+                min_apr = float(item.get("min_annual_rate", 0) or 0)
+                # 소수 형태일 경우 변환
+                if 0 < max_apr < 1:
+                    max_apr *= 100
+                if 0 < min_apr < 1:
+                    min_apr *= 100
+
+                duration = int(item.get("investment_period", 0) or 0)
+                status = item.get("status", "")
 
                 product = EarnProduct(
                     exchange=self.name,
-                    product_id=str(item.get("id", item.get("productId", ""))),
+                    product_id=str(item.get("id", "")),
                     coin=currency,
-                    product_name=item.get("name", f"{currency} 구조화 상품"),
+                    product_name=item.get("name_en", f"{currency} 구조화 상품"),
                     product_type=ProductType.STRUCTURED,
-                    apr=round(apr, 2),
+                    apr=round(max_apr, 2),
                     apr_type=AprType.FIXED,
                     duration_days=duration,
-                    min_amount=float(item.get("min_amount", 0) or 0),
-                    total_quota=total,
-                    remaining_quota=remain,
-                    is_limited=total > 0,
-                    is_sold_out=remain == 0 and total > 0,
+                    is_sold_out=status != "in_process",
                     url="https://www.gate.io/structured-products",
                     raw_data=item,
                 )
@@ -126,16 +106,3 @@ class GateioExchange(BaseExchange):
         except Exception as e:
             logger.error(f"[gateio] 구조화 상품 조회 실패: {e}")
         return products
-
-    def _parse_apr(self, item: dict) -> float:
-        for key in ["interest_rate", "rate", "apy", "apr"]:
-            val = item.get(key)
-            if val is not None:
-                val_str = str(val).strip()
-                if "%" in val_str:
-                    return float(val_str.replace("%", ""))
-                apr = float(val_str)
-                if 0 < apr < 0.5:
-                    apr *= 100
-                return apr
-        return 0.0
