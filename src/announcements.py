@@ -64,6 +64,8 @@ IRRELEVANT_KEYWORDS = [
     "referral", "affiliate",
     "convert", "swap",
     "nft", "web3",
+    "discount buy",
+    "livestream", "live stream", "webinar",
 ]
 
 # 3) 비스테이블코인 자산 (이 코인의 예치 이벤트는 제외)
@@ -89,15 +91,17 @@ class Announcement:
     ann_id: str
     published_at: str = ""
     category: str = ""
+    _path: str = ""  # KuCoin 상세 API용 원본 경로
 
     @property
     def unique_key(self) -> str:
         return f"{self.exchange}:{self.ann_id}"
 
     def is_earn_related(self) -> bool:
-        """Earn/수익 관련 공지인지 확인"""
+        """Earn/수익 관련 공지인지 확인 (단어 경계 매칭)"""
         text = f"{self.title} {self.category}".lower()
-        return any(kw in text for kw in EARN_KEYWORDS)
+        # "learn"이 "earn"에 매칭되는 것 방지 → 단어 경계(\b) 사용
+        return any(re.search(rf"\b{re.escape(kw)}\b", text) for kw in EARN_KEYWORDS)
 
     def mentions_stablecoin(self) -> bool:
         """스테이블코인 언급 여부"""
@@ -197,6 +201,158 @@ def format_announcement_message(ann: Announcement) -> str:
 
     return "\n".join(lines)
 
+
+# ============================================================
+# 본문 조회 (2단계 검증용)
+# ============================================================
+
+def _extract_binance_ast_text(node: dict) -> list[str]:
+    """Binance body JSON AST에서 텍스트 추출"""
+    texts = []
+    if node.get("node") == "text":
+        texts.append(node.get("text", ""))
+    for child in node.get("child", []):
+        texts.extend(_extract_binance_ast_text(child))
+    return texts
+
+
+def _extract_bybit_text(children: list) -> list[str]:
+    """Bybit __NEXT_DATA__ children에서 텍스트 추출"""
+    texts = []
+    for child in children:
+        if isinstance(child, dict):
+            if "text" in child:
+                texts.append(child["text"])
+            if "children" in child:
+                texts.extend(_extract_bybit_text(child["children"]))
+    return texts
+
+
+def _strip_html(html: str) -> str:
+    """HTML 태그 제거 → 순수 텍스트"""
+    return re.sub(r"<[^>]+>", " ", html).strip()
+
+
+async def _fetch_content(client: httpx.AsyncClient, ann: Announcement) -> str | None:
+    """공지사항 본문 텍스트 가져오기 (거래소별 분기)"""
+    try:
+        if ann.exchange == "binance":
+            return await _fetch_binance_content(client, ann)
+        elif ann.exchange == "bybit":
+            return await _fetch_bybit_content(client, ann)
+        elif ann.exchange == "okx":
+            return await _fetch_okx_content(client, ann)
+        elif ann.exchange == "kucoin":
+            return await _fetch_kucoin_content(client, ann)
+    except Exception as e:
+        logger.warning(f"[announcements] 본문 조회 실패 ({ann.exchange}): {e}")
+    return None
+
+
+async def _fetch_binance_content(client: httpx.AsyncClient, ann: Announcement) -> str | None:
+    """Binance 상세 API → seoDesc + body AST"""
+    resp = await client.get(
+        "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query",
+        params={"articleCode": ann.ann_id},
+    )
+    resp.raise_for_status()
+    article = resp.json().get("data", {})
+
+    parts = []
+    seo = article.get("seoDesc", "")
+    if seo:
+        parts.append(seo)
+
+    body = article.get("body")
+    if body:
+        body_ast = json.loads(body) if isinstance(body, str) else body
+        parts.extend(_extract_binance_ast_text(body_ast))
+
+    return " ".join(parts) if parts else None
+
+
+async def _fetch_bybit_content(client: httpx.AsyncClient, ann: Announcement) -> str | None:
+    """Bybit HTML → __NEXT_DATA__ JSON에서 본문 추출"""
+    if not ann.url:
+        return None
+    resp = await client.get(ann.url)
+    resp.raise_for_status()
+
+    match = re.search(
+        r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', resp.text, re.DOTALL,
+    )
+    if not match:
+        return None
+
+    data = json.loads(match.group(1))
+    detail = data.get("props", {}).get("pageProps", {}).get("articleDetail", {})
+    content = detail.get("content", {})
+
+    if isinstance(content, dict):
+        children = content.get("json", {}).get("children", [])
+        texts = _extract_bybit_text(children)
+        return " ".join(texts) if texts else None
+    return None
+
+
+async def _fetch_okx_content(client: httpx.AsyncClient, ann: Announcement) -> str | None:
+    """OKX HTML → <meta description> + <article> 태그"""
+    if not ann.url:
+        return None
+    resp = await client.get(ann.url)
+    resp.raise_for_status()
+
+    parts = []
+    meta = re.search(r'<meta name="description" content="([^"]*)"', resp.text)
+    if meta:
+        parts.append(meta.group(1))
+
+    article = re.search(r"<article[^>]*>(.*?)</article>", resp.text, re.DOTALL)
+    if article:
+        parts.append(_strip_html(article.group(1)))
+
+    return " ".join(parts) if parts else None
+
+
+async def _fetch_kucoin_content(client: httpx.AsyncClient, ann: Announcement) -> str | None:
+    """KuCoin 상세 API → content HTML"""
+    # _path 원본 경로 사용 (예: /en-earn-wednesday-week-113-...)
+    path_slug = ann._path.lstrip("/") if ann._path else ""
+    if not path_slug and "/announcement/" in ann.url:
+        path_slug = ann.url.split("/announcement/")[-1]
+
+    if not path_slug:
+        return None
+
+    resp = await client.get(
+        f"https://www.kucoin.com/_api/cms/articles/{path_slug}",
+        params={"lang": "en_US"},
+    )
+    if resp.status_code != 200:
+        return None
+    data = resp.json()
+    # 응답이 {data: {content: ...}} 또는 {content: ...} 형태
+    content_html = data.get("content", "")
+    if not content_html and isinstance(data.get("data"), dict):
+        content_html = data["data"].get("content", "")
+    return _strip_html(content_html) if content_html else None
+
+
+def _content_has_stablecoin_yield(content: str) -> bool:
+    """본문에 스테이블코인 + 수익률 언급이 있는지 확인"""
+    text = content.lower()
+    has_stable = any(s.lower() in text for s in STABLECOINS)
+    if not has_stable:
+        return False
+    has_yield = bool(re.search(
+        r"\d+(?:\.\d+)?\s*%?\s*(?:apr|apy|interest|yield|reward)", text,
+    ))
+    return has_yield
+
+
+# ============================================================
+# 거래소별 공지 목록 조회
+# ============================================================
 
 async def _fetch_binance(client: httpx.AsyncClient) -> list[Announcement]:
     """Binance Latest Activities 공지"""
@@ -309,13 +465,15 @@ async def _fetch_kucoin(client: httpx.AsyncClient) -> list[Announcement]:
             items = data["data"].get("items", [])
 
         for item in items:
+            raw_path = item.get("path", item.get("url", ""))
             ann = Announcement(
                 exchange="kucoin",
                 title=item.get("title", ""),
-                url=item.get("path", item.get("url", "")),
+                url=raw_path,
                 ann_id=str(item.get("id", "")),
                 published_at=str(item.get("publishTime", "")),
                 category=item.get("category", ""),
+                _path=raw_path,  # 상세 API용 원본 경로 보존
             )
             if ann.url and not ann.url.startswith("http"):
                 ann.url = f"https://www.kucoin.com/announcement{ann.url}"
@@ -358,32 +516,47 @@ async def scan_announcements() -> int:
 
         logger.info(f"[announcements] 전체 {len(all_announcements)}개 공지 수집")
 
-        # 필터링 (4단계)
-        relevant: list[Announcement] = []
+        # === 1차: 제목 기반 필터링 ===
+        confirmed: list[Announcement] = []
+        needs_verification: list[Announcement] = []
+
         for ann in all_announcements:
-            # 1단계: Earn 관련 키워드 포함 필수
             if not ann.is_earn_related():
                 continue
-            # 2단계: 지역 제한 이벤트 제외
             if ann.is_region_restricted():
-                logger.debug(f"[announcements] 지역 제외: {ann.title}")
                 continue
-            # 3단계: Earn과 무관한 주제 제외
             if ann.is_irrelevant_topic():
-                logger.debug(f"[announcements] 주제 제외: {ann.title}")
                 continue
-            # 4단계: 비스테이블코인 전용 이벤트 제외
             if ann.mentions_non_stable_asset():
-                logger.debug(f"[announcements] 비스테이블 제외: {ann.title}")
                 continue
-            # 통과: 스테이블코인 언급 또는 APR이 있는 일반 공지
-            if ann.mentions_stablecoin() or ann.extract_apr():
-                relevant.append(ann)
 
-        logger.info(f"[announcements] 필터 통과: {len(relevant)}개")
+            if ann.mentions_stablecoin():
+                # 제목에 스테이블코인 명시 → 확정
+                confirmed.append(ann)
+            elif ann.extract_apr():
+                # APR은 있지만 스테이블코인 미언급 → 본문 검증 필요
+                needs_verification.append(ann)
 
-        # 신규 공지만 알림
-        for ann in relevant:
+        logger.info(
+            f"[announcements] 제목 필터: 확정 {len(confirmed)}개, "
+            f"검증 필요 {len(needs_verification)}개"
+        )
+
+        # === 2차: 본문 기반 검증 (신규 공지만) ===
+        for ann in needs_verification:
+            if not store.is_new(ann):
+                store.mark_seen(ann)
+                continue
+            content = await _fetch_content(client, ann)
+            if content and _content_has_stablecoin_yield(content):
+                confirmed.append(ann)
+                logger.info(f"[announcements] 본문 확인 → 스테이블 특판: {ann.title}")
+            else:
+                logger.debug(f"[announcements] 본문 확인 → 비해당: {ann.title}")
+                store.mark_seen(ann)
+
+        # === 신규 공지 알림 전송 ===
+        for ann in confirmed:
             if store.is_new(ann):
                 msg = format_announcement_message(ann)
                 if await send_telegram(msg):
