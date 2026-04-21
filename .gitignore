@@ -1,8 +1,6 @@
 .env
 __pycache__/
 *.pyc
-data/seen_products.json
-data/seen_announcements.json
 .venv/
 venv/
 *.egg-info/

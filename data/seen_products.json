@@ -1,0 +1,74 @@
+{
+  "bybit:1:USDT:0": {
+    "exchange": "bybit",
+    "coin": "USDT",
+    "apr": 72.0,
+    "product_name": "USDT FlexibleSaving",
+    "first_seen": "2026-04-18T12:26:15.732486+00:00",
+    "last_seen": "2026-04-18T12:26:15.732508+00:00"
+  },
+  "bybit:2:USDC:0": {
+    "exchange": "bybit",
+    "coin": "USDC",
+    "apr": 80.0,
+    "product_name": "USDC FlexibleSaving",
+    "first_seen": "2026-04-18T12:26:15.732526+00:00",
+    "last_seen": "2026-04-18T12:26:15.732532+00:00"
+  },
+  "gateio:gate_uni_USDT:USDT:0": {
+    "exchange": "gateio",
+    "coin": "USDT",
+    "apr": 20.8,
+    "product_name": "USDT HODL & Earn",
+    "first_seen": "2026-04-18T12:26:15.732542+00:00",
+    "last_seen": "2026-04-18T12:26:15.732546+00:00"
+  },
+  "gateio:gate_uni_USDC:USDC:0": {
+    "exchange": "gateio",
+    "coin": "USDC",
+    "apr": 20.8,
+    "product_name": "USDC HODL & Earn",
+    "first_seen": "2026-04-18T12:26:15.732553+00:00",
+    "last_seen": "2026-04-18T12:26:15.732556+00:00"
+  },
+  "gateio:gate_uni_USDD:USDD:0": {
+    "exchange": "gateio",
+    "coin": "USDD",
+    "apr": 20.8,
+    "product_name": "USDD HODL & Earn",
+    "first_seen": "2026-04-18T12:26:15.732563+00:00",
+    "last_seen": "2026-04-18T12:26:15.732567+00:00"
+  },
+  "gateio:gate_uni_USDE:USDE:0": {
+    "exchange": "gateio",
+    "coin": "USDE",
+    "apr": 20.8,
+    "product_name": "USDE HODL & Earn",
+    "first_seen": "2026-04-18T12:26:15.732574+00:00",
+    "last_seen": "2026-04-18T12:26:15.732578+00:00"
+  },
+  "gateio:gate_uni_FDUSD:FDUSD:0": {
+    "exchange": "gateio",
+    "coin": "FDUSD",
+    "apr": 20.8,
+    "product_name": "FDUSD HODL & Earn",
+    "first_seen": "2026-04-18T12:26:15.732586+00:00",
+    "last_seen": "2026-04-18T12:26:15.732589+00:00"
+  },
+  "gateio:gate_uni_GUSD:GUSD:0": {
+    "exchange": "gateio",
+    "coin": "GUSD",
+    "apr": 20.8,
+    "product_name": "GUSD HODL & Earn",
+    "first_seen": "2026-04-18T12:26:15.732596+00:00",
+    "last_seen": "2026-04-18T12:26:15.732600+00:00"
+  },
+  "gateio:gate_uni_FRAX:FRAX:0": {
+    "exchange": "gateio",
+    "coin": "FRAX",
+    "apr": 20.8,
+    "product_name": "FRAX HODL & Earn",
+    "first_seen": "2026-04-18T12:26:15.732606+00:00",
+    "last_seen": "2026-04-18T12:26:15.732609+00:00"
+  }
+}
