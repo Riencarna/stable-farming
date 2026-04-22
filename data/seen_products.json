@@ -58,10 +58,10 @@
   "gateio:gate_uni_GUSD:GUSD:0": {
     "exchange": "gateio",
     "coin": "GUSD",
-    "apr": 10.65,
+    "apr": 10.64,
     "product_name": "GUSD HODL & Earn",
     "first_seen": "2026-04-18T12:26:15.732596+00:00",
-    "last_seen": "2026-04-22T10:18:36.028179+00:00"
+    "last_seen": "2026-04-22T11:33:58.038898+00:00"
   },
   "gateio:gate_uni_FRAX:FRAX:0": {
     "exchange": "gateio",
