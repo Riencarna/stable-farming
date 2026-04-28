@@ -24,10 +24,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: 'pip'
@@ -63,6 +63,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/seen_products.json data/seen_announcements.json
+          # 페그 검증 캐시는 첫 실행/CoinGecko 실패 시 없을 수 있어 별도 처리
+          [ -f data/stablecoin_verified.json ] && git add data/stablecoin_verified.json || true
           if git diff --staged --quiet; then
             echo "변경 없음 - 커밋 스킵"
           else
