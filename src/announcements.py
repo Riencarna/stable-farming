@@ -20,8 +20,9 @@ from pathlib import Path
 
 import httpx
 
-from src.config import DATA_DIR, STABLECOINS
+from src.config import DATA_DIR
 from src.notifier import send_telegram
+from src.peg_verify import VERIFIED_STABLECOINS
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +36,9 @@ EARN_KEYWORDS = [
     "subscribe", "deposit", "interest",
 ]
 
-# 스테이블코인 키워드 (소문자)
-STABLE_KEYWORDS = [s.lower() for s in STABLECOINS] + ["stablecoin", "stable coin"]
+# 스테이블코인 키워드 (소문자) — 검증된 set 기반으로 매 호출 시 계산
+def _stable_keywords() -> list[str]:
+    return [s.lower() for s in VERIFIED_STABLECOINS] + ["stablecoin", "stable coin"]
 
 # --- 필터링: 제외 대상 ---
 
@@ -122,7 +124,7 @@ class Announcement:
     def mentions_stablecoin(self) -> bool:
         """스테이블코인 언급 여부"""
         text = self.title.lower()
-        return any(kw in text for kw in STABLE_KEYWORDS)
+        return any(kw in text for kw in _stable_keywords())
 
     def extract_apr(self) -> str | None:
         """공지 제목에서 APR/APY 수치 추출"""
@@ -493,7 +495,7 @@ async def _fetch_kucoin_content(client: httpx.AsyncClient, ann: Announcement) ->
 def _content_has_stablecoin_yield(content: str) -> bool:
     """본문에 스테이블코인 + 수익률 언급이 있는지 확인"""
     text = content.lower()
-    has_stable = any(s.lower() in text for s in STABLECOINS)
+    has_stable = any(s.lower() in text for s in VERIFIED_STABLECOINS)
     if not has_stable:
         return False
     has_yield = bool(re.search(

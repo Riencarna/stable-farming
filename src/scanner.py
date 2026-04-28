@@ -7,6 +7,7 @@ from src.config import MIN_APR
 from src.exchanges import ALL_EXCHANGES
 from src.models import EarnProduct
 from src.notifier import notify_products, send_telegram
+from src.peg_verify import refresh_verification
 from src.store import ProductStore
 
 logger = logging.getLogger(__name__)
@@ -50,6 +51,9 @@ async def scan_and_notify() -> int:
     from src.announcements import scan_announcements
 
     store = ProductStore()
+
+    # 0. 스테이블코인 페그 검증 (캐시 24h, API 실패 시 원본 폴백)
+    await refresh_verification()
 
     # 1. 상품 조회 + 공지사항 스캔 (병렬)
     product_task = fetch_all_products()

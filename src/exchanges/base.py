@@ -8,8 +8,9 @@ from abc import ABC, abstractmethod
 
 import httpx
 
-from src.config import EXCHANGE_KEYS, STABLECOINS
+from src.config import EXCHANGE_KEYS
 from src.models import EarnProduct
+from src.peg_verify import VERIFIED_STABLECOINS
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +57,7 @@ class BaseExchange(ABC):
         return int(time.time() * 1000)
 
     def _is_stablecoin(self, coin: str) -> bool:
-        return coin.upper() in STABLECOINS
+        return coin.upper() in VERIFIED_STABLECOINS
 
     @abstractmethod
     async def fetch_products(self) -> list[EarnProduct]:
