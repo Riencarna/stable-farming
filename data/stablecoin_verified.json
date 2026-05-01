@@ -1,5 +1,5 @@
 {
-  "verified_at": "2026-04-30T11:13:46.469273+00:00",
+  "verified_at": "2026-05-01T11:21:36.530848+00:00",
   "verified": [
     "BUSD",
     "CRVUSD",
@@ -26,15 +26,7 @@
   ],
   "statuses": [
     {
-      "ticker": "USDB",
-      "coingecko_id": "",
-      "in_stable_category": false,
-      "price_usd": null,
-      "verified": true,
-      "reason": "CoinGecko ID 매핑 없음 → 자동 통과"
-    },
-    {
-      "ticker": "CUSD",
+      "ticker": "EUSD",
       "coingecko_id": "",
       "in_stable_category": false,
       "price_usd": null,
@@ -58,7 +50,15 @@
       "reason": "CoinGecko ID 매핑 없음 → 자동 통과"
     },
     {
-      "ticker": "EUSD",
+      "ticker": "USDB",
+      "coingecko_id": "",
+      "in_stable_category": false,
+      "price_usd": null,
+      "verified": true,
+      "reason": "CoinGecko ID 매핑 없음 → 자동 통과"
+    },
+    {
+      "ticker": "CUSD",
       "coingecko_id": "",
       "in_stable_category": false,
       "price_usd": null,
@@ -74,74 +74,42 @@
       "reason": "CoinGecko ID 매핑 없음 → 자동 통과"
     },
     {
-      "ticker": "BUSD",
-      "coingecko_id": "binance-usd",
-      "in_stable_category": true,
-      "price_usd": 0.989826,
-      "verified": true,
-      "reason": "통과 ($0.9898)"
-    },
-    {
-      "ticker": "FDUSD",
-      "coingecko_id": "first-digital-usd",
-      "in_stable_category": true,
-      "price_usd": 0.998354,
-      "verified": true,
-      "reason": "통과 ($0.9984)"
-    },
-    {
       "ticker": "USDE",
       "coingecko_id": "ethena-usde",
       "in_stable_category": true,
-      "price_usd": 0.999071,
+      "price_usd": 0.999154,
       "verified": true,
-      "reason": "통과 ($0.9991)"
+      "reason": "통과 ($0.9992)"
     },
     {
-      "ticker": "LUSD",
-      "coingecko_id": "liquity-usd",
+      "ticker": "USDD",
+      "coingecko_id": "usdd",
       "in_stable_category": true,
-      "price_usd": 1.003,
+      "price_usd": 0.999981,
       "verified": true,
-      "reason": "통과 ($1.0030)"
+      "reason": "통과 ($1.0000)"
     },
     {
-      "ticker": "TUSD",
-      "coingecko_id": "true-usd",
-      "in_stable_category": false,
-      "price_usd": 0.999475,
+      "ticker": "USDC",
+      "coingecko_id": "usd-coin",
+      "in_stable_category": true,
+      "price_usd": 0.999734,
       "verified": true,
-      "reason": "카테고리 조회 실패 → 원본 유지"
+      "reason": "통과 ($0.9997)"
     },
     {
-      "ticker": "PYUSD",
-      "coingecko_id": "paypal-usd",
-      "in_stable_category": false,
-      "price_usd": 0.999988,
+      "ticker": "USDS",
+      "coingecko_id": "usds",
+      "in_stable_category": true,
+      "price_usd": 0.999826,
       "verified": true,
-      "reason": "카테고리 조회 실패 → 원본 유지"
+      "reason": "통과 ($0.9998)"
     },
     {
-      "ticker": "GUSD",
-      "coingecko_id": "gemini-dollar",
+      "ticker": "BUSD",
+      "coingecko_id": "binance-usd",
       "in_stable_category": false,
-      "price_usd": 1.001,
-      "verified": true,
-      "reason": "카테고리 조회 실패 → 원본 유지"
-    },
-    {
-      "ticker": "DAI",
-      "coingecko_id": "dai",
-      "in_stable_category": false,
-      "price_usd": 0.999487,
-      "verified": true,
-      "reason": "카테고리 조회 실패 → 원본 유지"
-    },
-    {
-      "ticker": "GHO",
-      "coingecko_id": "gho",
-      "in_stable_category": false,
-      "price_usd": 0.999302,
+      "price_usd": 0.999465,
       "verified": true,
       "reason": "카테고리 조회 실패 → 원본 유지"
     },
@@ -149,7 +117,39 @@
       "ticker": "USDT",
       "coingecko_id": "tether",
       "in_stable_category": false,
-      "price_usd": 0.99953,
+      "price_usd": 0.999615,
+      "verified": true,
+      "reason": "카테고리 조회 실패 → 원본 유지"
+    },
+    {
+      "ticker": "GUSD",
+      "coingecko_id": "gemini-dollar",
+      "in_stable_category": false,
+      "price_usd": 1.0,
+      "verified": true,
+      "reason": "카테고리 조회 실패 → 원본 유지"
+    },
+    {
+      "ticker": "PYUSD",
+      "coingecko_id": "paypal-usd",
+      "in_stable_category": false,
+      "price_usd": 0.999688,
+      "verified": true,
+      "reason": "카테고리 조회 실패 → 원본 유지"
+    },
+    {
+      "ticker": "TUSD",
+      "coingecko_id": "true-usd",
+      "in_stable_category": false,
+      "price_usd": 0.999918,
+      "verified": true,
+      "reason": "카테고리 조회 실패 → 원본 유지"
+    },
+    {
+      "ticker": "GHO",
+      "coingecko_id": "gho",
+      "in_stable_category": false,
+      "price_usd": 0.999663,
       "verified": true,
       "reason": "카테고리 조회 실패 → 원본 유지"
     },
@@ -157,23 +157,7 @@
       "ticker": "CRVUSD",
       "coingecko_id": "crvusd",
       "in_stable_category": false,
-      "price_usd": 0.999542,
-      "verified": true,
-      "reason": "카테고리 조회 실패 → 원본 유지"
-    },
-    {
-      "ticker": "USDP",
-      "coingecko_id": "paxos-standard",
-      "in_stable_category": false,
-      "price_usd": 0.999311,
-      "verified": true,
-      "reason": "카테고리 조회 실패 → 원본 유지"
-    },
-    {
-      "ticker": "USDS",
-      "coingecko_id": "usds",
-      "in_stable_category": false,
-      "price_usd": 0.999781,
+      "price_usd": 0.999794,
       "verified": true,
       "reason": "카테고리 조회 실패 → 원본 유지"
     },
@@ -186,18 +170,34 @@
       "reason": "카테고리 조회 실패 → 원본 유지"
     },
     {
-      "ticker": "USDC",
-      "coingecko_id": "usd-coin",
+      "ticker": "FDUSD",
+      "coingecko_id": "first-digital-usd",
       "in_stable_category": false,
-      "price_usd": 0.999842,
+      "price_usd": 0.998717,
       "verified": true,
       "reason": "카테고리 조회 실패 → 원본 유지"
     },
     {
-      "ticker": "USDD",
-      "coingecko_id": "usdd",
+      "ticker": "LUSD",
+      "coingecko_id": "liquity-usd",
       "in_stable_category": false,
-      "price_usd": 0.999523,
+      "price_usd": 1.004,
+      "verified": true,
+      "reason": "카테고리 조회 실패 → 원본 유지"
+    },
+    {
+      "ticker": "USDP",
+      "coingecko_id": "paxos-standard",
+      "in_stable_category": false,
+      "price_usd": 0.999616,
+      "verified": true,
+      "reason": "카테고리 조회 실패 → 원본 유지"
+    },
+    {
+      "ticker": "DAI",
+      "coingecko_id": "dai",
+      "in_stable_category": false,
+      "price_usd": 0.99984,
       "verified": true,
       "reason": "카테고리 조회 실패 → 원본 유지"
     }
