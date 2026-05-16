@@ -53,8 +53,6 @@ jobs:
           KUCOIN_API_KEY: ${{ secrets.KUCOIN_API_KEY }}
           KUCOIN_API_SECRET: ${{ secrets.KUCOIN_API_SECRET }}
           KUCOIN_PASSPHRASE: ${{ secrets.KUCOIN_PASSPHRASE }}
-          HTX_API_KEY: ${{ secrets.HTX_API_KEY }}
-          HTX_API_SECRET: ${{ secrets.HTX_API_SECRET }}
         run: python run.py --mode once
 
       # 변경된 알림 기록을 저장소에 커밋
