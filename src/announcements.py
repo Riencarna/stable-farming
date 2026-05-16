@@ -63,11 +63,12 @@ IRRELEVANT_KEYWORDS = [
     "airdrop", "launchpad", "launchpool",
     "maintenance", "upgrade", "suspension",
     "copy trading", "copy trade", "bot",
-    "referral", "affiliate",
+    "referral", "affiliate", "invite friends", "invite a friend",
     "convert", "swap",
     "nft", "web3",
     "discount buy",
     "livestream", "live stream", "webinar",
+    "mining", "kumining", "cloud mining", "hashrate",
 ]
 
 # 3) 비스테이블코인 자산 (이 코인의 예치 이벤트는 제외)
@@ -122,9 +123,11 @@ class Announcement:
         return any(re.search(rf"\b{re.escape(kw)}\b", text) for kw in EARN_KEYWORDS)
 
     def mentions_stablecoin(self) -> bool:
-        """스테이블코인 언급 여부"""
+        """스테이블코인 언급 여부 (단어 경계 매칭 — "daily" 안의 "dai" 등 부분 매칭 방지)"""
         text = self.title.lower()
-        return any(kw in text for kw in _stable_keywords())
+        return any(
+            re.search(rf"\b{re.escape(kw)}\b", text) for kw in _stable_keywords()
+        )
 
     def extract_apr(self) -> str | None:
         """공지 제목에서 APR/APY 수치 추출"""
@@ -493,9 +496,12 @@ async def _fetch_kucoin_content(client: httpx.AsyncClient, ann: Announcement) ->
 
 
 def _content_has_stablecoin_yield(content: str) -> bool:
-    """본문에 스테이블코인 + 수익률 언급이 있는지 확인"""
+    """본문에 스테이블코인 + 수익률 언급이 있는지 확인 (단어 경계 매칭)"""
     text = content.lower()
-    has_stable = any(s.lower() in text for s in VERIFIED_STABLECOINS)
+    has_stable = any(
+        re.search(rf"\b{re.escape(s.lower())}\b", text)
+        for s in VERIFIED_STABLECOINS
+    )
     if not has_stable:
         return False
     has_yield = bool(re.search(
