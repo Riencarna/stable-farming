@@ -10,7 +10,6 @@ API 호출 실패 시 원본 STABLECOINS 유지 (안전 폴백).
 
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 from dataclasses import dataclass
@@ -104,32 +103,33 @@ def _save_cache(verified: set[str], statuses: list[CoinStatus]) -> None:
     )
 
 
-async def _fetch_prices(client: httpx.AsyncClient, ids: list[str]) -> dict[str, float]:
-    if not ids:
-        return {}
-    resp = await client.get(
-        "https://api.coingecko.com/api/v3/simple/price",
-        params={"ids": ",".join(ids), "vs_currencies": "usd"},
-    )
-    resp.raise_for_status()
-    data = resp.json()
-    return {k: v["usd"] for k, v in data.items() if isinstance(v, dict) and "usd" in v}
+async def _fetch_stablecoin_market(
+    client: httpx.AsyncClient,
+) -> dict[str, float | None]:
+    """Stablecoins 카테고리 + 가격을 한 번에 일괄 조회.
 
+    /coins/markets?category=stablecoins 로 page 1+2 (~500개) 수집.
+    개별 카테고리 호출 제거로 rate limit 회피.
 
-async def _fetch_categories(client: httpx.AsyncClient, coin_id: str) -> list[str]:
-    resp = await client.get(
-        f"https://api.coingecko.com/api/v3/coins/{coin_id}",
-        params={
-            "localization": "false",
-            "tickers": "false",
-            "market_data": "false",
-            "community_data": "false",
-            "developer_data": "false",
-            "sparkline": "false",
-        },
-    )
-    resp.raise_for_status()
-    return resp.json().get("categories") or []
+    반환: {coingecko_id: price_usd}
+    """
+    result: dict[str, float | None] = {}
+    for page in (1, 2):
+        resp = await client.get(
+            "https://api.coingecko.com/api/v3/coins/markets",
+            params={
+                "vs_currency": "usd",
+                "category": "stablecoins",
+                "per_page": 250,
+                "page": page,
+            },
+        )
+        resp.raise_for_status()
+        for item in resp.json():
+            cid = item.get("id")
+            if cid:
+                result[cid] = item.get("current_price")
+    return result
 
 
 def _apply_verified(verified: set[str]) -> None:
@@ -168,33 +168,25 @@ async def refresh_verification(force: bool = False) -> set[str]:
                 "Accept": "application/json",
             },
         ) as client:
-            prices = await _fetch_prices(client, list(mapped.values()))
+            market = await _fetch_stablecoin_market(client)
 
             for ticker, coin_id in mapped.items():
                 status = CoinStatus(ticker=ticker, coingecko_id=coin_id)
-                status.price_usd = prices.get(coin_id)
 
-                try:
-                    categories = await _fetch_categories(client, coin_id)
-                    status.in_stable_category = any(
-                        "stablecoin" in c.lower() for c in categories
-                    )
-                except Exception as e:
-                    logger.warning(f"[peg_verify] {ticker} 카테고리 조회 실패: {e}")
-                    status.reason = "카테고리 조회 실패 → 원본 유지"
-                    status.verified = True
-                    verified.add(ticker)
-                    statuses.append(status)
-                    await asyncio.sleep(0.5)
-                    continue
+                if coin_id in market:
+                    status.in_stable_category = True
+                    status.price_usd = market[coin_id]
+                else:
+                    status.in_stable_category = False
+                    status.price_usd = None
 
-                if status.price_usd is None:
+                if not status.in_stable_category:
+                    status.reason = "Stablecoins 카테고리 아님"
+                    status.verified = False
+                elif status.price_usd is None:
                     status.reason = "가격 조회 실패 → 원본 유지"
                     status.verified = True
                     verified.add(ticker)
-                elif not status.in_stable_category:
-                    status.reason = "Stablecoins 카테고리 아님"
-                    status.verified = False
                 elif not (PEG_MIN <= status.price_usd <= PEG_MAX):
                     status.reason = f"페그 이탈 (${status.price_usd:.4f})"
                     status.verified = False
@@ -204,7 +196,6 @@ async def refresh_verification(force: bool = False) -> set[str]:
                     verified.add(ticker)
 
                 statuses.append(status)
-                await asyncio.sleep(0.5)  # CoinGecko free tier rate limit
 
     except Exception as e:
         logger.error(f"[peg_verify] 검증 실패: {e} → 원본 STABLECOINS 사용")
