@@ -99,7 +99,7 @@ async def send_startup_message() -> None:
     from src.config import has_keys
 
     # 공개 API 지원 거래소
-    public_exchanges = ["bybit", "okx", "gateio", "htx"]
+    public_exchanges = ["bybit", "okx", "gateio"]
     # API 키 필요 거래소
     key_required = ["binance", "kucoin"]
 
@@ -120,7 +120,7 @@ async def send_startup_message() -> None:
     msg_lines.extend([
         "",
         f"\U0001f4ca <b>최소 APR:</b> {MIN_APR}%",
-        f"\U0001f4e2 <b>공지사항 추적:</b> BINANCE, BYBIT, OKX, KUCOIN, HTX",
+        f"\U0001f4e2 <b>공지사항 추적:</b> BINANCE, OKX, KUCOIN",
         "\U0001f50d 스캔을 시작합니다...",
     ])
 

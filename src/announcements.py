@@ -192,7 +192,6 @@ def _exchange_emoji(exchange: str) -> str:
         "bybit": "\U0001f7e0",
         "okx": "\u26aa",
         "kucoin": "\U0001f7e2",
-        "htx": "\U0001f535",
     }
     return emojis.get(exchange, "\u26aa")
 
@@ -365,8 +364,6 @@ async def _fetch_content(client: httpx.AsyncClient, ann: Announcement) -> str | 
             return await _fetch_okx_content(client, ann)
         elif ann.exchange == "kucoin":
             return await _fetch_kucoin_content(client, ann)
-        elif ann.exchange == "htx":
-            return await _fetch_htx_content(client, ann)
     except Exception as e:
         logger.warning(f"[announcements] 본문 조회 실패 ({ann.exchange}): {e}")
     return None
@@ -435,40 +432,6 @@ async def _fetch_okx_content(client: httpx.AsyncClient, ann: Announcement) -> st
         parts.append(_strip_html(article.group(1)))
 
     return " ".join(parts) if parts else None
-
-
-async def _fetch_htx_content(client: httpx.AsyncClient, ann: Announcement) -> str | None:
-    """HTX SSR 페이지 → window.__NUXT__에서 본문 추출"""
-    if not ann.url:
-        return None
-    resp = await client.get(ann.url)
-    resp.raise_for_status()
-
-    # window.__NUXT__ JSON에서 content 추출
-    match = re.search(r"window\.__NUXT__\s*=\s*(\{.*?\})\s*;?\s*</script>", resp.text, re.DOTALL)
-    if match:
-        try:
-            nuxt_data = json.loads(match.group(1))
-            # details.content 경로 탐색
-            details = nuxt_data.get("data", [{}])[0].get("details", {})
-            if not details:
-                # 다른 구조일 수 있음
-                for val in nuxt_data.get("data", []):
-                    if isinstance(val, dict) and "details" in val:
-                        details = val["details"]
-                        break
-            content_html = details.get("content", "")
-            if content_html:
-                return _strip_html(content_html)
-        except (json.JSONDecodeError, IndexError, KeyError):
-            pass
-
-    # 폴백: HTML에서 article content 추출
-    article = re.search(r"<article[^>]*>(.*?)</article>", resp.text, re.DOTALL)
-    if article:
-        return _strip_html(article.group(1))
-
-    return None
 
 
 async def _fetch_kucoin_content(client: httpx.AsyncClient, ann: Announcement) -> str | None:
@@ -541,30 +504,14 @@ async def _fetch_binance(client: httpx.AsyncClient) -> list[Announcement]:
 
 
 async def _fetch_bybit(client: httpx.AsyncClient) -> list[Announcement]:
-    """Bybit 공지"""
-    announcements: list[Announcement] = []
-    try:
-        resp = await client.get(
-            "https://api.bybit.com/v5/announcements/index",
-            params={"locale": "en-US", "limit": 20},
-        )
-        resp.raise_for_status()
-        data = resp.json()
+    """Bybit 공지 — GitHub Actions IP 차단(403)으로 비활성화.
 
-        for item in data.get("result", {}).get("list", []):
-            category = item.get("type", {}).get("title", "")
-            ann = Announcement(
-                exchange="bybit",
-                title=item.get("title", ""),
-                url=item.get("url", ""),
-                ann_id=str(item.get("id", item.get("annId", ""))),
-                published_at=str(item.get("publishTime", item.get("dateTimestamp", ""))),
-                category=category,
-            )
-            announcements.append(ann)
-    except Exception as e:
-        logger.error(f"[announcements] Bybit 공지 조회 실패: {e}")
-    return announcements
+    `api.bybit.com/v5/announcements/index` 및 대체 엔드포인트
+    (announcements.bybit.com, api2.bybit.com, announcement-info) 모두
+    GitHub Actions 환경에서 차단됨. Bybit 상품 추적은 정상 동작 중.
+    재활성화 시 봇 우회나 헤더 추가가 필요할 수 있음.
+    """
+    return []
 
 
 async def _fetch_okx(client: httpx.AsyncClient) -> list[Announcement]:
@@ -606,42 +553,6 @@ async def _fetch_okx(client: httpx.AsyncClient) -> list[Announcement]:
                 announcements.append(ann)
     except Exception as e:
         logger.error(f"[announcements] OKX 공지 조회 실패: {e}")
-    return announcements
-
-
-async def _fetch_htx(client: httpx.AsyncClient) -> list[Announcement]:
-    """HTX Earn 카테고리 공지"""
-    announcements: list[Announcement] = []
-    try:
-        # HTX Earn 카테고리: oneLevelId=54911014605677, twoLevelId=74935418929230
-        resp = await client.get(
-            "https://www.htx.com/-/x/support/public/getList/v2",
-            params={
-                "page": 1,
-                "limit": 20,
-                "oneLevelId": "54911014605677",
-                "twoLevelId": "74935418929230",
-                "language": "en-us",
-            },
-        )
-        resp.raise_for_status()
-        data = resp.json()
-
-        if data.get("code") != 200:
-            return []
-
-        for item in data.get("data", {}).get("list", []):
-            ann = Announcement(
-                exchange="htx",
-                title=item.get("title", ""),
-                url=f"https://www.htx.com/support/en-us/detail/{item.get('id', '')}",
-                ann_id=str(item.get("id", "")),
-                published_at=item.get("showTime", ""),
-                category="HTX Earn",
-            )
-            announcements.append(ann)
-    except Exception as e:
-        logger.error(f"[announcements] HTX 공지 조회 실패: {e}")
     return announcements
 
 
@@ -692,7 +603,6 @@ async def scan_announcements() -> int:
         timeout=15.0,
         headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
         follow_redirects=True,
-        verify=False,  # HTX SSL 인증서 문제 대응
     ) as client:
         # 모든 거래소 공지 수집
         import asyncio
@@ -701,7 +611,6 @@ async def scan_announcements() -> int:
             _fetch_bybit(client),
             _fetch_okx(client),
             _fetch_kucoin(client),
-            _fetch_htx(client),
             return_exceptions=True,
         )
 

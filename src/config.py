@@ -55,10 +55,6 @@ EXCHANGE_KEYS: dict[str, dict[str, str]] = {
         "api_secret": os.getenv("KUCOIN_API_SECRET", ""),
         "passphrase": os.getenv("KUCOIN_PASSPHRASE", ""),
     },
-    "htx": {
-        "api_key": os.getenv("HTX_API_KEY", ""),
-        "api_secret": os.getenv("HTX_API_SECRET", ""),
-    },
 }
 
 

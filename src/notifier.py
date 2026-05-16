@@ -31,7 +31,6 @@ def _exchange_emoji(exchange: str) -> str:
         "okx": "\u26aa",           # 흰 원
         "gateio": "\U0001f535",    # 파란 원
         "kucoin": "\U0001f7e2",    # 초록 원
-        "htx": "\U0001f534",       # 빨간 원
     }
     return emojis.get(exchange, "\u26aa")
 
