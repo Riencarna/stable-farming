@@ -27,7 +27,7 @@ SCAN_INTERVAL_MINUTES: int = int(os.getenv("SCAN_INTERVAL_MINUTES", "10"))
 STABLECOINS: set[str] = {
     "USDT", "USDC", "USDE", "USDS", "USDP", "PYUSD",
     "DAI", "FDUSD", "TUSD", "BUSD", "LUSD",
-    "USAT", "EUSD", "GUSD", "SUSD", "CUSD", "USDD",
+    "USAT", "EUSD", "GUSD", "SUSD", "CUSD", "USDM", "USDD",
     "CRVUSD", "GHO", "MKUSD", "USDB", "USD0",
 }
 

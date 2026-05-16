@@ -46,6 +46,14 @@ COINGECKO_IDS: dict[str, str] = {
     "USDD": "usdd",
     "CRVUSD": "crvusd",
     "GHO": "gho",
+    "MKUSD": "prisma-mkusd",
+    "SUSD": "nusd",
+    "USD0": "usual-usd",
+    "EUSD": "electronic-usd",
+    "USDB": "usdb",
+    # CUSD = USDM (Celo Dollar는 Mento Dollar로 리브랜딩됨, 같은 CoinGecko ID 공유)
+    "CUSD": "celo-dollar",
+    "USDM": "celo-dollar",
 }
 
 # 다른 모듈이 import 해서 참조. 시작 시 STABLECOINS 원본으로 초기화.
