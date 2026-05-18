@@ -69,6 +69,8 @@ IRRELEVANT_KEYWORDS = [
     "discount buy",
     "livestream", "live stream", "webinar",
     "mining", "kumining", "cloud mining", "hashrate",
+    "vip", "special care",
+    "fee deduction", "trading fee", "fee discount", "fee coupon",
 ]
 
 # 3) 비스테이블코인 자산 (이 코인의 예치 이벤트는 제외)
@@ -279,7 +281,11 @@ def _extract_deal_terms(content: str) -> DealTerms:
     return terms
 
 
-def format_announcement_message(ann: Announcement, terms: DealTerms | None = None) -> str:
+def format_announcement_message(
+    ann: Announcement,
+    terms: DealTerms | None = None,
+    eligibility: str = "",
+) -> str:
     """공지사항 텔레그램 알림 메시지"""
     emoji = _exchange_emoji(ann.exchange)
     apr_str = ann.extract_apr()
@@ -296,6 +302,11 @@ def format_announcement_message(ann: Announcement, terms: DealTerms | None = Non
 
     if ann.category:
         lines.append(f"\U0001f3f7 <b>카테고리:</b> {ann.category}")
+
+    # 자격 조건 (참고용 — 한 번 보고 본인 해당 여부 즉시 판단)
+    if eligibility:
+        lines.append("")
+        lines.append(f"\u26a0\ufe0f <b>자격 조건:</b> {eligibility}")
 
     # 특판 조건 추가
     if terms and terms.has_any():
@@ -471,6 +482,54 @@ def _content_has_stablecoin_yield(content: str) -> bool:
         r"\d+(?:\.\d+)?\s*%?\s*(?:apr|apy|interest|yield|reward)", text,
     ))
     return has_yield
+
+
+# VIP/등급/거래량 제한 패턴 — 본문에서 발견되면 자동 차단
+RESTRICTED_PATTERNS = [
+    r"\bvip\s+(?:level|tier)\b",
+    r"\bvip\s+\d+",
+    r"\bvip\s+(?:users?\s+)?only\b",
+    r"only\s+(?:available\s+to\s+)?(?:selected\s+)?vips?\b",
+    r"exclusive\s+(?:to\s+)?(?:selected\s+)?vips?\b",
+    r"eligible\s+vips?\b",
+    r"traded?\s+(?:over\s+|more\s+than\s+)?[\d,]+\s*(?:usdt|usdc|usd|btc)",
+    r"trading\s+volume\s+(?:of\s+)?(?:over\s+|exceeding\s+|>\s*)[\d,]+",
+    r"(?:invitation|invite[-\s]?only)\s+(?:event|campaign|promotion)",
+    r"whitelist(?:ed)?\s+users?\s+only",
+]
+
+
+def _body_has_restricted_eligibility(content: str) -> tuple[bool, str]:
+    """본문에 VIP/등급/거래량 등 회원 제한 자격 조건이 있는지 확인.
+
+    반환: (제한 여부, 매칭된 문맥 — 로그용)
+    """
+    text = content.lower()
+    for pat in RESTRICTED_PATTERNS:
+        m = re.search(pat, text)
+        if m:
+            idx = m.start()
+            ctx = content[max(0, idx - 20):min(len(content), idx + 60)]
+            ctx = re.sub(r"\s+", " ", ctx).strip()
+            return True, ctx
+    return False, ""
+
+
+def _extract_eligibility(content: str) -> str:
+    """본문에서 'Eligibility Criteria' 등 자격 조건 섹션 짧게 추출 (참고용 표시)"""
+    text = re.sub(r"\s+", " ", content)
+    patterns = [
+        r"eligibility\s+criteria[:\s]+(.{10,200}?)(?:package\s+details|terms|disclaimer|how\s+to|$)",
+        r"who\s+can\s+(?:participate|join)[:\s]+(.{10,200}?)(?:rewards|terms|how\s+to|$)",
+    ]
+    for pat in patterns:
+        m = re.search(pat, text, re.I)
+        if m:
+            elig = m.group(1).strip().rstrip(",;:")
+            if len(elig) > 180:
+                elig = elig[:177] + "..."
+            return elig
+    return ""
 
 
 # ============================================================
@@ -670,13 +729,25 @@ async def scan_announcements() -> int:
         for ann in confirmed:
             if not store.is_new(ann):
                 continue
-            # 본문 기반 terms 추출 (캐시 우선, 없으면 조회)
+            # 본문 기반 검증 + terms 추출 (캐시 우선, 없으면 조회)
             content = content_cache.get(ann.unique_key)
             if content is None:
                 content = await _fetch_content(client, ann) or ""
-            terms = _extract_deal_terms(content) if content else DealTerms()
 
-            msg = format_announcement_message(ann, terms)
+            # VIP/등급/거래량 제한 자동 차단 (본문 기반)
+            if content:
+                restricted, ctx = _body_has_restricted_eligibility(content)
+                if restricted:
+                    logger.info(
+                        f"[announcements] VIP/등급 제한 → 차단: {ann.title} | 매칭: {ctx}"
+                    )
+                    store.mark_seen(ann)
+                    continue
+
+            terms = _extract_deal_terms(content) if content else DealTerms()
+            eligibility = _extract_eligibility(content) if content else ""
+
+            msg = format_announcement_message(ann, terms, eligibility=eligibility)
             if await send_telegram(msg):
                 new_count += 1
             store.mark_seen(ann)
