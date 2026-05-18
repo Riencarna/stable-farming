@@ -1,5 +1,5 @@
 {
-  "verified_at": "2026-05-17T14:12:11.113025+00:00",
+  "verified_at": "2026-05-18T15:53:55.649088+00:00",
   "verified": [
     "BUSD",
     "CRVUSD",
@@ -25,64 +25,48 @@
   ],
   "statuses": [
     {
-      "ticker": "USDS",
-      "coingecko_id": "usds",
+      "ticker": "CUSD",
+      "coingecko_id": "celo-dollar",
       "in_stable_category": true,
-      "price_usd": 0.999699,
+      "price_usd": 0.999599,
       "verified": true,
-      "reason": "통과 ($0.9997)"
-    },
-    {
-      "ticker": "USDC",
-      "coingecko_id": "usd-coin",
-      "in_stable_category": true,
-      "price_usd": 0.999856,
-      "verified": true,
-      "reason": "통과 ($0.9999)"
-    },
-    {
-      "ticker": "BUSD",
-      "coingecko_id": "binance-usd",
-      "in_stable_category": true,
-      "price_usd": 0.999771,
-      "verified": true,
-      "reason": "통과 ($0.9998)"
+      "reason": "통과 ($0.9996)"
     },
     {
       "ticker": "CRVUSD",
       "coingecko_id": "crvusd",
       "in_stable_category": true,
-      "price_usd": 0.999461,
+      "price_usd": 0.99904,
       "verified": true,
-      "reason": "통과 ($0.9995)"
+      "reason": "통과 ($0.9990)"
     },
     {
-      "ticker": "SUSD",
-      "coingecko_id": "nusd",
+      "ticker": "PYUSD",
+      "coingecko_id": "paypal-usd",
       "in_stable_category": true,
-      "price_usd": 0.635478,
-      "verified": false,
-      "reason": "페그 이탈 ($0.6355)"
+      "price_usd": 0.999718,
+      "verified": true,
+      "reason": "통과 ($0.9997)"
     },
     {
-      "ticker": "USDD",
-      "coingecko_id": "usdd",
+      "ticker": "EUSD",
+      "coingecko_id": "electronic-usd",
       "in_stable_category": true,
-      "price_usd": 0.999769,
+      "price_usd": 0.999619,
       "verified": true,
-      "reason": "통과 ($0.9998)"
-    },
-    {
-      "ticker": "FDUSD",
-      "coingecko_id": "first-digital-usd",
-      "in_stable_category": true,
-      "price_usd": 0.998289,
-      "verified": true,
-      "reason": "통과 ($0.9983)"
+      "reason": "통과 ($0.9996)"
     },
     {
       "ticker": "MKUSD",
       "coingecko_id": "prisma-mkusd",
+      "in_stable_category": true,
+      "price_usd": 0.994115,
+      "verified": true,
+      "reason": "통과 ($0.9941)"
+    },
+    {
+      "ticker": "LUSD",
+      "coingecko_id": "liquity-usd",
       "in_stable_category": true,
       "price_usd": 1.001,
       "verified": true,
@@ -92,57 +76,41 @@
       "ticker": "USD0",
       "coingecko_id": "usual-usd",
       "in_stable_category": true,
-      "price_usd": 0.998263,
+      "price_usd": 0.998146,
       "verified": true,
-      "reason": "통과 ($0.9983)"
-    },
-    {
-      "ticker": "USDT",
-      "coingecko_id": "tether",
-      "in_stable_category": true,
-      "price_usd": 0.999551,
-      "verified": true,
-      "reason": "통과 ($0.9996)"
-    },
-    {
-      "ticker": "LUSD",
-      "coingecko_id": "liquity-usd",
-      "in_stable_category": true,
-      "price_usd": 1.002,
-      "verified": true,
-      "reason": "통과 ($1.0020)"
-    },
-    {
-      "ticker": "USDP",
-      "coingecko_id": "paxos-standard",
-      "in_stable_category": true,
-      "price_usd": 0.999803,
-      "verified": true,
-      "reason": "통과 ($0.9998)"
-    },
-    {
-      "ticker": "USDM",
-      "coingecko_id": "celo-dollar",
-      "in_stable_category": true,
-      "price_usd": 0.99859,
-      "verified": true,
-      "reason": "통과 ($0.9986)"
+      "reason": "통과 ($0.9981)"
     },
     {
       "ticker": "USDE",
       "coingecko_id": "ethena-usde",
       "in_stable_category": true,
-      "price_usd": 0.999985,
+      "price_usd": 0.99959,
       "verified": true,
-      "reason": "통과 ($1.0000)"
+      "reason": "통과 ($0.9996)"
     },
     {
-      "ticker": "GHO",
-      "coingecko_id": "gho",
+      "ticker": "DAI",
+      "coingecko_id": "dai",
       "in_stable_category": true,
-      "price_usd": 0.999465,
+      "price_usd": 0.999721,
       "verified": true,
-      "reason": "통과 ($0.9995)"
+      "reason": "통과 ($0.9997)"
+    },
+    {
+      "ticker": "FDUSD",
+      "coingecko_id": "first-digital-usd",
+      "in_stable_category": true,
+      "price_usd": 0.997504,
+      "verified": true,
+      "reason": "통과 ($0.9975)"
+    },
+    {
+      "ticker": "SUSD",
+      "coingecko_id": "nusd",
+      "in_stable_category": true,
+      "price_usd": 0.608057,
+      "verified": false,
+      "reason": "페그 이탈 ($0.6081)"
     },
     {
       "ticker": "USAT",
@@ -153,60 +121,92 @@
       "reason": "Stablecoins 카테고리 아님"
     },
     {
-      "ticker": "GUSD",
-      "coingecko_id": "gemini-dollar",
+      "ticker": "USDM",
+      "coingecko_id": "celo-dollar",
       "in_stable_category": true,
-      "price_usd": 0.999046,
+      "price_usd": 0.999599,
       "verified": true,
-      "reason": "통과 ($0.9990)"
+      "reason": "통과 ($0.9996)"
     },
     {
-      "ticker": "DAI",
-      "coingecko_id": "dai",
+      "ticker": "USDP",
+      "coingecko_id": "paxos-standard",
       "in_stable_category": true,
-      "price_usd": 0.999503,
+      "price_usd": 0.999714,
       "verified": true,
-      "reason": "통과 ($0.9995)"
+      "reason": "통과 ($0.9997)"
     },
     {
-      "ticker": "EUSD",
-      "coingecko_id": "electronic-usd",
+      "ticker": "USDC",
+      "coingecko_id": "usd-coin",
       "in_stable_category": true,
-      "price_usd": 0.996859,
+      "price_usd": 0.999725,
       "verified": true,
-      "reason": "통과 ($0.9969)"
+      "reason": "통과 ($0.9997)"
     },
     {
       "ticker": "USDB",
       "coingecko_id": "usdb",
       "in_stable_category": true,
-      "price_usd": 0.99389,
+      "price_usd": 0.994588,
       "verified": true,
-      "reason": "통과 ($0.9939)"
+      "reason": "통과 ($0.9946)"
     },
     {
-      "ticker": "CUSD",
-      "coingecko_id": "celo-dollar",
+      "ticker": "USDT",
+      "coingecko_id": "tether",
       "in_stable_category": true,
-      "price_usd": 0.99859,
+      "price_usd": 0.999364,
       "verified": true,
-      "reason": "통과 ($0.9986)"
+      "reason": "통과 ($0.9994)"
     },
     {
-      "ticker": "PYUSD",
-      "coingecko_id": "paypal-usd",
+      "ticker": "USDD",
+      "coingecko_id": "usdd",
       "in_stable_category": true,
-      "price_usd": 1.0,
+      "price_usd": 0.999199,
       "verified": true,
-      "reason": "통과 ($1.0000)"
+      "reason": "통과 ($0.9992)"
+    },
+    {
+      "ticker": "GUSD",
+      "coingecko_id": "gemini-dollar",
+      "in_stable_category": true,
+      "price_usd": 0.99929,
+      "verified": true,
+      "reason": "통과 ($0.9993)"
+    },
+    {
+      "ticker": "GHO",
+      "coingecko_id": "gho",
+      "in_stable_category": true,
+      "price_usd": 0.999129,
+      "verified": true,
+      "reason": "통과 ($0.9991)"
     },
     {
       "ticker": "TUSD",
       "coingecko_id": "true-usd",
       "in_stable_category": true,
-      "price_usd": 0.999394,
+      "price_usd": 0.999043,
       "verified": true,
-      "reason": "통과 ($0.9994)"
+      "reason": "통과 ($0.9990)"
+    },
+    {
+      "ticker": "USDS",
+      "coingecko_id": "usds",
+      "in_stable_category": true,
+      "price_usd": 0.999765,
+      "verified": true,
+      "reason": "통과 ($0.9998)"
+    },
+    {
+      "ticker": "BUSD",
+      "coingecko_id": "binance-usd",
+      "in_stable_category": true,
+      "price_usd": 0.998845,
+      "verified": true,
+      "reason": "통과 ($0.9988)"
     }
   ]
 }
