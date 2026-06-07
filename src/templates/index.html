@@ -206,6 +206,21 @@
         .apr-mid { color: var(--yellow); }
         .apr-low { color: var(--text); }
 
+        .product-cell {
+            min-width: 260px;
+            max-width: 420px;
+            white-space: normal;
+        }
+        .product-name {
+            font-weight: 600;
+        }
+        .product-note {
+            margin-top: 4px;
+            color: var(--text-dim);
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
         .tag {
             display: inline-block;
             padding: 2px 8px;
@@ -294,6 +309,11 @@
         }
         .alert-item:first-child { border-top: none; }
         .alert-info { display: flex; gap: 12px; align-items: center; }
+        .alert-meta {
+            color: var(--text-dim);
+            font-size: 12px;
+            margin-top: 4px;
+        }
 
         /* 빈 상태 */
         .empty-state {
@@ -455,7 +475,15 @@
                         <tr>
                             <td><span class="exchange-badge badge-{{ p.exchange }}">{{ p.exchange }}</span></td>
                             <td><strong>{{ p.coin }}</strong></td>
-                            <td>{{ p.product_name }}</td>
+                            <td class="product-cell">
+                                <div class="product-name">{{ p.product_name }}</div>
+                                {% if p.eligibility %}
+                                    <div class="product-note">조건: {{ p.eligibility }}</div>
+                                {% endif %}
+                                {% if p.risk_note %}
+                                    <div class="product-note">주의: {{ p.risk_note }}</div>
+                                {% endif %}
+                            </td>
                             <td class="apr-cell {% if p.apr >= 15 %}apr-high{% elif p.apr >= 10 %}apr-mid{% else %}apr-low{% endif %}">
                                 {{ "%.1f"|format(p.apr) }}%
                             </td>
@@ -520,7 +548,15 @@
                         <tr>
                             <td><span class="exchange-badge badge-{{ p.exchange }}">{{ p.exchange }}</span></td>
                             <td><strong>{{ p.coin }}</strong></td>
-                            <td>{{ p.product_name }}</td>
+                            <td class="product-cell">
+                                <div class="product-name">{{ p.product_name }}</div>
+                                {% if p.eligibility %}
+                                    <div class="product-note">조건: {{ p.eligibility }}</div>
+                                {% endif %}
+                                {% if p.risk_note %}
+                                    <div class="product-note">주의: {{ p.risk_note }}</div>
+                                {% endif %}
+                            </td>
                             <td class="apr-cell {% if p.apr >= 15 %}apr-high{% elif p.apr >= 10 %}apr-mid{% elif p.apr >= min_apr %}apr-low{% endif %}"
                                 style="{% if p.apr < min_apr %}color: var(--text-dim);{% endif %}">
                                 {{ "%.1f"|format(p.apr) }}%
@@ -563,7 +599,15 @@
                     <div class="alert-info">
                         <span class="exchange-badge badge-{{ item.exchange }}">{{ item.exchange }}</span>
                         <strong>{{ item.coin }}</strong>
-                        <span>{{ item.product_name }}</span>
+                        <span>
+                            {{ item.product_name }}
+                            {% if item.tags %}
+                                <span class="alert-meta">{{ item.tags|join(', ') }}</span>
+                            {% endif %}
+                            {% if item.risk_note %}
+                                <span class="alert-meta">{{ item.risk_note }}</span>
+                            {% endif %}
+                        </span>
                     </div>
                     <div>
                         <span style="color: var(--green); font-weight: 700;">{{ "%.1f"|format(item.apr) }}%</span>
