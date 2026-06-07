@@ -5,12 +5,54 @@ import logging
 
 from src.config import MIN_APR
 from src.exchanges import ALL_EXCHANGES
-from src.models import EarnProduct
+from src.models import AprType, EarnProduct, ProductType
 from src.notifier import notify_products, send_telegram
 from src.peg_verify import refresh_verification
 from src.store import ProductStore
 
 logger = logging.getLogger(__name__)
+
+
+def _add_tag(product: EarnProduct, tag: str) -> None:
+    if tag not in product.tags:
+        product.tags.append(tag)
+
+
+def enrich_product_metadata(product: EarnProduct) -> EarnProduct:
+    """API 상품에 공통 태그와 주의 메모를 붙인다."""
+    product.source = product.source or "api"
+
+    if product.product_type == ProductType.FLEXIBLE or product.duration_days == 0:
+        _add_tag(product, "유동")
+    else:
+        _add_tag(product, "고정")
+
+    if product.apr_type == AprType.FIXED:
+        _add_tag(product, "고정금리")
+    else:
+        _add_tag(product, "변동금리")
+
+    if product.is_limited or product.total_quota > 0 or product.max_amount > 0:
+        _add_tag(product, "한정")
+
+    if product.end_time:
+        _add_tag(product, "기간있음")
+
+    if product.apr >= 15:
+        _add_tag(product, "고APR")
+
+    notes: list[str] = []
+    if product.source == "api":
+        notes.append("API 기반 상품입니다. 가입 전 거래소 화면의 최종 조건을 확인하세요.")
+    if product.is_limited:
+        notes.append("한도 소진 또는 조기 마감 가능성이 있습니다.")
+    if product.apr_type == AprType.VARIABLE:
+        notes.append("변동금리는 스캔 이후 바뀔 수 있습니다.")
+
+    if notes and not product.risk_note:
+        product.risk_note = " ".join(notes)
+
+    return product
 
 
 async def fetch_all_products() -> list[EarnProduct]:
@@ -21,7 +63,7 @@ async def fetch_all_products() -> list[EarnProduct]:
 
     all_products: list[EarnProduct] = []
     for products in results:
-        all_products.extend(products)
+        all_products.extend(enrich_product_metadata(p) for p in products)
 
     logger.info(f"전체 {len(all_products)}개 스테이블코인 상품 조회")
     return all_products
