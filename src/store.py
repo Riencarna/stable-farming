@@ -57,6 +57,10 @@ class ProductStore:
             "coin": product.coin,
             "apr": product.apr,
             "product_name": product.product_name,
+            "source": product.source,
+            "tags": product.tags,
+            "eligibility": product.eligibility,
+            "risk_note": product.risk_note,
             "first_seen": self._seen.get(product.unique_key, {}).get(
                 "first_seen",
                 datetime.now(timezone.utc).isoformat(),

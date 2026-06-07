@@ -44,12 +44,27 @@ def format_product_message(product: EarnProduct) -> str:
         f"\U0001f6a8 <b>새로운 고수익 상품 발견!</b>",
         "",
         f"{emoji} <b>거래소:</b> {exchange_upper}",
+        f"\U0001f4e1 <b>출처:</b> {product.source_label}",
         f"\U0001f4b0 <b>코인:</b> {product.coin}",
         f"\U0001f4cb <b>상품:</b> {product.product_name}",
         f"\U0001f4c8 <b>APR:</b> {product.apr}% ({product.apr_type_label})",
         f"\U0001f4c5 <b>유형:</b> {product.product_type_label}",
         f"\u23f0 <b>기간:</b> {product.duration_label}",
     ]
+
+    if product.base_apr is not None or product.bonus_apr is not None:
+        base = f"{product.base_apr}%" if product.base_apr is not None else "-"
+        bonus = f"{product.bonus_apr}%" if product.bonus_apr is not None else "-"
+        lines.append(f"\U0001f9ee <b>구성:</b> 기본 {base} / 보너스 {bonus}")
+
+    if product.tags:
+        lines.append(f"\U0001f3f7 <b>태그:</b> {', '.join(product.tags)}")
+
+    if product.eligibility:
+        lines.append(f"\u26a0\ufe0f <b>조건:</b> {product.eligibility}")
+
+    if product.risk_note:
+        lines.append(f"\U0001f6a7 <b>주의:</b> {product.risk_note}")
 
     if product.min_amount > 0:
         lines.append(f"\U0001f4b5 <b>최소 예치:</b> {_format_number(product.min_amount)} {product.coin}")
@@ -88,10 +103,11 @@ def format_summary_message(products: list[EarnProduct]) -> str:
     for p in sorted(products, key=lambda x: x.apr, reverse=True):
         emoji = _exchange_emoji(p.exchange)
         limited = " \u26a0\ufe0f한정" if p.is_limited else ""
+        tags = f" [{', '.join(p.tags)}]" if p.tags else ""
         lines.append(
             f"{emoji} {p.exchange.upper()} | {p.coin} | "
             f"{p.apr}% {p.apr_type_label} | "
-            f"{p.duration_label}{limited}"
+            f"{p.duration_label}{limited}{tags}"
         )
 
     return "\n".join(lines)

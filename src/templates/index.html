@@ -444,6 +444,7 @@
                             <th>APR</th>
                             <th>금리</th>
                             <th>유형</th>
+                            <th>출처/태그</th>
                             <th>기간</th>
                             <th>최소 예치</th>
                             <th>한도</th>
@@ -467,6 +468,12 @@
                                 <span class="tag {% if p.product_type.value == 'flexible' %}tag-flexible{% else %}tag-locked{% endif %}">
                                     {{ p.product_type_label }}
                                 </span>
+                            </td>
+                            <td>
+                                <span class="tag tag-variable">{{ p.source_label }}</span>
+                                {% for tag in p.tags %}
+                                    <span class="tag tag-limited">{{ tag }}</span>
+                                {% endfor %}
                             </td>
                             <td>{{ p.duration_label }}</td>
                             <td>{% if p.min_amount > 0 %}{{ "%.0f"|format(p.min_amount) }}{% else %}-{% endif %}</td>
@@ -504,6 +511,7 @@
                             <th>APR</th>
                             <th>금리</th>
                             <th>유형</th>
+                            <th>출처/태그</th>
                             <th>기간</th>
                         </tr>
                     </thead>
@@ -526,6 +534,12 @@
                                 <span class="tag {% if p.product_type.value == 'flexible' %}tag-flexible{% else %}tag-locked{% endif %}">
                                     {{ p.product_type_label }}
                                 </span>
+                            </td>
+                            <td>
+                                <span class="tag tag-variable">{{ p.source_label }}</span>
+                                {% for tag in p.tags %}
+                                    <span class="tag tag-limited">{{ tag }}</span>
+                                {% endfor %}
                             </td>
                             <td>{{ p.duration_label }}</td>
                         </tr>
