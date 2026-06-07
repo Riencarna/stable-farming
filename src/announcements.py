@@ -183,7 +183,7 @@ class AnnouncementStore:
 
     def save(self) -> None:
         # 최근 500개만 유지
-        items = list(self._seen)[-500:]
+        items = sorted(self._seen)[-500:]
         SEEN_ANNOUNCEMENTS_PATH.write_text(
             json.dumps(items, ensure_ascii=False),
             encoding="utf-8",
