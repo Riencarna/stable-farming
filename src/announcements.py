@@ -105,6 +105,14 @@ class DealTerms:
 
 
 @dataclass
+class AnnouncementAnalysis:
+    """공지 알림에 표시할 정규화 메타데이터"""
+    tags: list[str] = field(default_factory=list)
+    eligibility: str = ""
+    risk_note: str = ""
+
+
+@dataclass
 class Announcement:
     exchange: str
     title: str
@@ -281,14 +289,64 @@ def _extract_deal_terms(content: str) -> DealTerms:
     return terms
 
 
+def _add_tag(tags: list[str], tag: str) -> None:
+    if tag not in tags:
+        tags.append(tag)
+
+
+def _analyze_announcement(
+    ann: Announcement,
+    content: str,
+    terms: DealTerms,
+) -> AnnouncementAnalysis:
+    """공지 본문/제목에서 태그와 주의 메모를 만든다."""
+    text = f"{ann.title} {ann.category} {content}".lower()
+    tags: list[str] = ["공지기반"]
+    risk_notes = ["공지 기반 상품입니다. 가입 전 원문 조건을 확인하세요."]
+
+    if ann.extract_apr():
+        _add_tag(tags, "APR명시")
+
+    if terms.lock_period:
+        if "flexible" in terms.lock_period.lower():
+            _add_tag(tags, "유동")
+        else:
+            _add_tag(tags, "고정")
+
+    if terms.total_cap or terms.per_user_max or re.search(
+        r"\b(limited|first[-\s]?come|quota|cap|while supplies last)\b",
+        text,
+    ):
+        _add_tag(tags, "한정")
+        risk_notes.append("한도 소진 또는 조기 종료 가능성이 있습니다.")
+
+    if re.search(r"\b(new users?|newly registered|first[-\s]?time)\b", text):
+        _add_tag(tags, "신규가입")
+        risk_notes.append("신규 가입자 전용 조건일 수 있습니다.")
+
+    if re.search(r"\bbonus|reward|extra|boost(?:ed)?\b", text):
+        _add_tag(tags, "보너스")
+        risk_notes.append("표시 APR에 이벤트 보너스가 섞였을 수 있습니다.")
+
+    if terms.period or ann.published_at:
+        _add_tag(tags, "기간있음")
+
+    return AnnouncementAnalysis(
+        tags=tags,
+        eligibility=_extract_eligibility(content) if content else "",
+        risk_note=" ".join(risk_notes),
+    )
+
+
 def format_announcement_message(
     ann: Announcement,
     terms: DealTerms | None = None,
-    eligibility: str = "",
+    analysis: AnnouncementAnalysis | None = None,
 ) -> str:
     """공지사항 텔레그램 알림 메시지"""
     emoji = _exchange_emoji(ann.exchange)
     apr_str = ann.extract_apr()
+    analysis = analysis or AnnouncementAnalysis()
 
     lines = [
         f"\U0001f4e2 <b>특판 공지 발견!</b>",
@@ -303,10 +361,16 @@ def format_announcement_message(
     if ann.category:
         lines.append(f"\U0001f3f7 <b>카테고리:</b> {ann.category}")
 
+    if analysis.tags:
+        lines.append(f"\U0001f3f7 <b>태그:</b> {', '.join(analysis.tags)}")
+
     # 자격 조건 (참고용 — 한 번 보고 본인 해당 여부 즉시 판단)
-    if eligibility:
+    if analysis.eligibility:
         lines.append("")
-        lines.append(f"\u26a0\ufe0f <b>자격 조건:</b> {eligibility}")
+        lines.append(f"\u26a0\ufe0f <b>자격 조건:</b> {analysis.eligibility}")
+
+    if analysis.risk_note:
+        lines.append(f"\U0001f6a7 <b>주의:</b> {analysis.risk_note}")
 
     # 특판 조건 추가
     if terms and terms.has_any():
@@ -745,9 +809,9 @@ async def scan_announcements() -> int:
                     continue
 
             terms = _extract_deal_terms(content) if content else DealTerms()
-            eligibility = _extract_eligibility(content) if content else ""
+            analysis = _analyze_announcement(ann, content, terms)
 
-            msg = format_announcement_message(ann, terms, eligibility=eligibility)
+            msg = format_announcement_message(ann, terms, analysis=analysis)
             if await send_telegram(msg):
                 new_count += 1
             store.mark_seen(ann)
