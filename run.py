@@ -32,6 +32,12 @@ logging.basicConfig(
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger("stable-farming")
 
+PROGRAM_DISABLED = True
+DISABLED_MESSAGE = (
+    "Stable Farming is disabled. "
+    "This project has been retired in favor of a better alternative."
+)
+
 
 async def test_exchange(name: str) -> None:
     """특정 거래소 연결 테스트"""
@@ -84,6 +90,10 @@ async def test_telegram() -> None:
 
 
 def main() -> None:
+    if PROGRAM_DISABLED:
+        print(DISABLED_MESSAGE)
+        return
+
     parser = argparse.ArgumentParser(
         description="Stable Farming - 스테이블코인 수익 상품 모니터",
     )

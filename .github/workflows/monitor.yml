@@ -1,11 +1,8 @@
 name: Stable Farming Monitor
 
 on:
-  # 10분마다 자동 실행
-  schedule:
-    - cron: '*/10 * * * *'
-
-  # 수동 실행 가능
+  # Disabled: automatic monitoring has been retired.
+  # Manual runs remain available only to confirm the disabled entry point.
   workflow_dispatch:
 
 # 저장소에 커밋하기 위해 write 권한 필요
